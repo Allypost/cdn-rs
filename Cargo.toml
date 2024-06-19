@@ -1,0 +1,38 @@
+[package]
+name = "cdn"
+version = "0.1.0"
+edition = "2021"
+authors = ["Allypost"]
+description = "A simple file server that can compress files on the fly"
+license = "MPL-2.0"
+
+[dependencies]
+anyhow = "1.0.86"
+axum = { version = "0.7.5", features = ["macros"] }
+clap = { version = "4.5.7", features = ["env", "derive"] }
+flate2 = "1.0.30"
+once_cell = { version = "1.19.0", features = ["parking_lot"] }
+strum = { version = "0.26.2", features = ["derive"] }
+tokio = { version = "1.38.0", features = ["rt-multi-thread"] }
+tower = "0.4.13"
+tower-http = { version = "0.5.2", features = ["fs", "catch-panic", "cors", "set-header"] }
+tracing = { version = "0.1.40", features = ["log"] }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "parking_lot"] }
+
+[lints.clippy]
+nursery = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+module_name_repetitions = "allow"
+single_match_else = "allow"
+manual_let_else = "allow"
+uninlined_format_args = "allow"
+missing_panics_doc = "allow"
+missing_errors_doc = "allow"
+no_effect_underscore_binding = "allow"
+cognitive_complexity = "allow"
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
