@@ -85,6 +85,7 @@ async fn start_server() {
                 .precompressed_gzip()
                 .precompressed_deflate()
                 .precompressed_br()
+                .precompressed_zstd()
                 .append_index_html_on_directories(false),
         )
         .layer(SetResponseHeaderLayer::appending(

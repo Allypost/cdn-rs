@@ -6,7 +6,7 @@ use std::{
 };
 
 use brotli2::write::BrotliEncoder;
-use flate2::write::{DeflateEncoder, GzEncoder};
+use flate2::write::{DeflateEncoder, GzEncoder, ZlibEncoder};
 use strum::{EnumIter, IntoEnumIterator};
 use tracing::{debug, trace};
 
@@ -16,6 +16,7 @@ use crate::tempfile::TempFile;
 pub enum Compression {
     Gzip,
     Deflate,
+    Zstd,
     Brotli,
 }
 
@@ -25,6 +26,7 @@ impl Compression {
             Self::Gzip => ".gz",
             Self::Deflate => ".zz",
             Self::Brotli => ".br",
+            Self::Zstd => ".zst",
         }
     }
 
@@ -50,24 +52,31 @@ impl Compression {
         R: ?Sized + Read,
         W: ?Sized + Write,
     {
+        let compression_level = flate2::Compression::default();
+
         match self {
             Self::Gzip => {
-                let mut encoder = GzEncoder::new(writer, flate2::Compression::default());
+                let mut encoder = GzEncoder::new(writer, compression_level);
                 std::io::copy(reader, &mut encoder)?;
                 encoder.try_finish()?;
             }
 
             Self::Deflate => {
-                let mut encoder = DeflateEncoder::new(writer, flate2::Compression::default());
+                let mut encoder = DeflateEncoder::new(writer, compression_level);
                 std::io::copy(reader, &mut encoder)?;
                 encoder.try_finish()?;
             }
 
             Self::Brotli => {
-                let mut encoder =
-                    BrotliEncoder::new(writer, flate2::Compression::default().level());
+                let mut encoder = BrotliEncoder::new(writer, compression_level.level());
                 std::io::copy(reader, &mut encoder)?;
                 encoder.finish()?;
+            }
+
+            Self::Zstd => {
+                let mut encoder = ZlibEncoder::new(writer, flate2::Compression::default());
+                std::io::copy(reader, &mut encoder)?;
+                encoder.try_finish()?;
             }
         };
 
