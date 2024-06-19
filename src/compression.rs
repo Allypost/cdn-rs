@@ -6,9 +6,10 @@ use std::{
 };
 
 use brotli2::write::BrotliEncoder;
-use flate2::write::{DeflateEncoder, GzEncoder, ZlibEncoder};
+use flate2::write::{DeflateEncoder, GzEncoder};
 use strum::{EnumIter, IntoEnumIterator};
 use tracing::{debug, trace};
+use zstd::Encoder as ZstdEncoder;
 
 use crate::tempfile::TempFile;
 
@@ -74,9 +75,9 @@ impl Compression {
             }
 
             Self::Zstd => {
-                let mut encoder = ZlibEncoder::new(writer, flate2::Compression::default());
+                let mut encoder = ZstdEncoder::new(writer, compression_level.level() as i32)?;
                 std::io::copy(reader, &mut encoder)?;
-                encoder.try_finish()?;
+                encoder.try_finish().map_err(|e| e.1)?;
             }
         };
 

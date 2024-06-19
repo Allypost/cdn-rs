@@ -19,6 +19,7 @@ tower = "0.4.13"
 tower-http = { version = "0.5.2", features = ["fs", "catch-panic", "cors", "set-header"] }
 tracing = { version = "0.1.40", features = ["log"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "parking_lot"] }
+zstd = "0.13.1"
 
 [lints.clippy]
 nursery = { level = "warn", priority = -1 }
