@@ -34,6 +34,14 @@ async fn main() {
         std::process::exit(1);
     }
 
+    if let Err(e) = std::fs::create_dir_all(ARGS.temp_dir()) {
+        error!(
+            dir = ?ARGS.temp_dir(),
+            "Failed to create temp directory: {}", e
+        );
+        std::process::exit(1);
+    }
+
     init_compress_worker();
     start_server().await;
 }
@@ -53,9 +61,9 @@ fn init_compress_worker() {
     COMPRESS_SEND.get_or_init(|| compress_send);
 
     tokio::spawn(async move {
-        while let Some((path_original, compression)) = compress_recv.recv().await {
-            if let Err(e) = compression.compress_file(&path_original) {
-                warn!("Failed to compress file {:?}: {}", &path_original, e);
+        while let Some((path, compression)) = compress_recv.recv().await {
+            if let Err(e) = compression.compress_file(&path) {
+                warn!("Failed to compress file {:?}: {}", &path, e);
             }
         }
     });
@@ -88,9 +96,13 @@ async fn start_server() {
                     return next.run(request).await;
                 }
 
-                let file_path = ARGS
-                    .serve_directory
-                    .join(format!("./{}", request.uri().path()));
+                let file_path = {
+                    let p = ARGS
+                        .serve_directory
+                        .join(format!("./{}", request.uri().path()));
+
+                    std::fs::canonicalize(&p).unwrap_or(p)
+                };
 
                 let response = next.run(request).await;
 
