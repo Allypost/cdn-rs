@@ -5,6 +5,7 @@ use std::{
     time::{self, Instant},
 };
 
+use brotli2::write::BrotliEncoder;
 use flate2::write::{DeflateEncoder, GzEncoder};
 use strum::{EnumIter, IntoEnumIterator};
 use tracing::{debug, trace};
@@ -15,6 +16,7 @@ use crate::tempfile::TempFile;
 pub enum Compression {
     Gzip,
     Deflate,
+    Brotli,
 }
 
 impl Compression {
@@ -22,6 +24,7 @@ impl Compression {
         match self {
             Self::Gzip => ".gz",
             Self::Deflate => ".zz",
+            Self::Brotli => ".br",
         }
     }
 
@@ -58,6 +61,13 @@ impl Compression {
                 let mut encoder = DeflateEncoder::new(writer, flate2::Compression::default());
                 std::io::copy(reader, &mut encoder)?;
                 encoder.try_finish()?;
+            }
+
+            Self::Brotli => {
+                let mut encoder =
+                    BrotliEncoder::new(writer, flate2::Compression::default().level());
+                std::io::copy(reader, &mut encoder)?;
+                encoder.finish()?;
             }
         };
 

@@ -84,6 +84,7 @@ async fn start_server() {
             tower_http::services::ServeDir::new(&ARGS.serve_directory)
                 .precompressed_gzip()
                 .precompressed_deflate()
+                .precompressed_br()
                 .append_index_html_on_directories(false),
         )
         .layer(SetResponseHeaderLayer::appending(

@@ -9,6 +9,7 @@ license = "MPL-2.0"
 [dependencies]
 anyhow = "1.0.86"
 axum = { version = "0.7.5", features = ["macros"] }
+brotli2 = "0.3.2"
 clap = { version = "4.5.7", features = ["env", "derive"] }
 flate2 = "1.0.30"
 once_cell = { version = "1.19.0", features = ["parking_lot"] }
