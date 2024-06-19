@@ -1,0 +1,12 @@
+.git
+.gitignore
+
+.dockerignore
+Dockerfile
+/.docker/
+
+/README.md
+/LICENSE
+
+/target/
+/public/
