@@ -31,7 +31,7 @@ impl Compression {
         }
     }
 
-    pub fn is_compressed(path: &Path) -> bool {
+    pub fn is_compressed_file_path(path: &Path) -> bool {
         let path_str = path.to_string_lossy();
 
         Self::iter().any(|ct| path_str.ends_with(ct.file_ext()))
@@ -90,14 +90,26 @@ pub fn compress_file(path_original: &Path, compression: Compression) -> anyhow::
         anyhow::bail!("File does not exist: {:?}", path_original);
     }
 
-    if Compression::is_compressed(path_original) {
+    if Compression::is_compressed_file_path(path_original) {
         return Ok(());
     }
 
     let path_compressed = compression.add_ext_to_file(path_original);
 
     if path_compressed.exists() {
-        return Ok(());
+        let created_compressed = path_compressed.metadata()?.created();
+        let created_original = path_original.metadata()?.created();
+
+        match (created_original, created_compressed) {
+            // If compressed file is created after original, then we don't need to do anything
+            (Ok(original), Ok(compressed)) if compressed >= original => {
+                return Ok(());
+            }
+            // Otherwise, the compressed file is probably stale
+            _ => {
+                let _ = std::fs::remove_file(&path_compressed);
+            }
+        }
     }
 
     debug!(
