@@ -92,6 +92,12 @@ async fn start_server() {
             header::VARY,
             HeaderValue::from_static("accept-encoding"),
         ))
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::CACHE_CONTROL,
+            HeaderValue::from_static(
+                "public, max-age=3600, no-transform, stale-while-revalidate=600, stale-if-error=3600",
+            ),
+        ))
         .layer(axum::middleware::from_fn(
             |request: Request, next: Next| async move {
                 if !ARGS.compress_files {
