@@ -18,6 +18,16 @@ pub struct CliArgs {
     #[arg(long, value_name = "TEMP_DIRECTORY", env = "CDN_TEMP_DIRECTORY", value_hint = ValueHint::DirPath)]
     pub temp_directory: Option<PathBuf>,
 
+    /// Whether to append index.html to directories
+    ///
+    /// Whether to serve the index.html file if folder is requested
+    #[arg(
+        long,
+        env = "CDN_APPEND_INDEX_HTML_ON_DIRECTORIES",
+        default_value_t = false
+    )]
+    pub append_index_html_on_directories: bool,
+
     /// Whether to generate compressed files dynamically
     ///
     /// If enabled, the application will generate gzipped and deflated versions of the files.

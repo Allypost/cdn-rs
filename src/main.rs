@@ -86,7 +86,7 @@ async fn start_server() {
                 .precompressed_deflate()
                 .precompressed_br()
                 .precompressed_zstd()
-                .append_index_html_on_directories(false),
+                .append_index_html_on_directories(ARGS.append_index_html_on_directories),
         )
         .layer(SetResponseHeaderLayer::appending(
             header::VARY,
@@ -95,7 +95,8 @@ async fn start_server() {
         .layer(SetResponseHeaderLayer::if_not_present(
             header::CACHE_CONTROL,
             HeaderValue::from_static(
-                "public, max-age=3600, no-transform, stale-while-revalidate=600, stale-if-error=3600",
+                "public, max-age=3600, no-transform, stale-while-revalidate=600, \
+                 stale-if-error=3600",
             ),
         ))
         .layer(axum::middleware::from_fn(
