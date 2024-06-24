@@ -82,10 +82,10 @@ async fn start_server() {
         .nest_service(
             "/",
             tower_http::services::ServeDir::new(&ARGS.serve_directory)
+                .precompressed_zstd()
                 .precompressed_gzip()
                 .precompressed_deflate()
                 .precompressed_br()
-                .precompressed_zstd()
                 .append_index_html_on_directories(ARGS.append_index_html_on_directories),
         )
         .layer(SetResponseHeaderLayer::appending(
