@@ -62,6 +62,10 @@ fn init_compress_worker() {
 
     tokio::spawn(async move {
         while let Some((path, compression)) = compress_recv.recv().await {
+            if !path.is_file() {
+                continue;
+            }
+
             if let Err(e) = compression.compress_file(&path) {
                 warn!("Failed to compress file {:?}: {}", &path, e);
             }
