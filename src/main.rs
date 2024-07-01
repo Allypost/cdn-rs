@@ -4,7 +4,7 @@ use args::ARGS;
 use axum::{
     extract::Request,
     http::{header, HeaderValue},
-    middleware::Next,
+    middleware::{self, Next},
     Router,
 };
 use compression::Compression;
@@ -82,8 +82,8 @@ async fn start_server() {
             .unwrap_or_else(|_| panic!("Failed to bind to {}", addr))
     };
 
-    let app = Router::new()
-        .nest_service(
+    let app = {
+        let mut app = Router::new().nest_service(
             "/",
             tower_http::services::ServeDir::new(&ARGS.serve_directory)
                 .precompressed_zstd()
@@ -91,19 +91,37 @@ async fn start_server() {
                 .precompressed_deflate()
                 .precompressed_br()
                 .append_index_html_on_directories(ARGS.append_index_html_on_directories),
-        )
-        .layer(SetResponseHeaderLayer::appending(
+        );
+
+        app = app.layer(SetResponseHeaderLayer::appending(
             header::VARY,
             HeaderValue::from_static("accept-encoding"),
-        ))
-        .layer(SetResponseHeaderLayer::if_not_present(
-            header::CACHE_CONTROL,
-            HeaderValue::from_static(
-                "public, max-age=3600, no-transform, stale-while-revalidate=600, \
-                 stale-if-error=3600",
-            ),
-        ))
-        .layer(axum::middleware::from_fn(
+        ));
+
+        if ARGS.no_cache_files {
+            app = app.layer(middleware::from_fn(
+                |request: Request, next: Next| async move {
+                    let mut response = next.run(request).await;
+                    response.headers_mut().remove(header::LAST_MODIFIED);
+                    response
+                },
+            ));
+
+            app = app.layer(SetResponseHeaderLayer::overriding(
+                header::CACHE_CONTROL,
+                HeaderValue::from_static("public, max-age=0, must-revalidate"),
+            ));
+        } else {
+            app = app.layer(SetResponseHeaderLayer::if_not_present(
+                header::CACHE_CONTROL,
+                HeaderValue::from_static(
+                    "public, max-age=3600, no-transform, stale-while-revalidate=600, \
+                     stale-if-error=3600",
+                ),
+            ));
+        }
+
+        app = app.layer(axum::middleware::from_fn(
             |request: Request, next: Next| async move {
                 if !ARGS.compress_files {
                     return next.run(request).await;
@@ -129,14 +147,19 @@ async fn start_server() {
 
                 response
             },
-        ))
-        .layer(
+        ));
+
+        app = app.layer(
             CorsLayer::new()
                 .allow_methods(AllowMethods::mirror_request())
                 .allow_origin(AllowOrigin::mirror_request())
                 .allow_headers(AllowHeaders::mirror_request()),
-        )
-        .layer(CatchPanicLayer::new());
+        );
+
+        app = app.layer(CatchPanicLayer::new());
+
+        app
+    };
 
     info!(
         "Listening on http://{}",

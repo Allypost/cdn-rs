@@ -38,6 +38,10 @@ pub struct CliArgs {
     #[arg(short, long, env = "CDN_COMPRESS_FILES", default_value_t = true)]
     pub compress_files: bool,
 
+    /// Tells the CDN whether to cache files or set cache-busting headers
+    #[arg(long, env = "CDN_NO_CACHE_FILES", default_value_t = false)]
+    pub no_cache_files: bool,
+
     /// Host to bind to.
     ///
     /// Usually either localohst if you don't want the service visible to the outside or 0.0.0.0
